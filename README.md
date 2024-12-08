@@ -106,7 +106,7 @@ Ensure these keys are correctly set in the `.env` file for smooth application fu
 
 ## **Screenshots**
 ### 1. Homepage
-![Homepage](path_to_homepage_screenshot.png)
+![Homepage](Homepage.png)
 
 ---
 
