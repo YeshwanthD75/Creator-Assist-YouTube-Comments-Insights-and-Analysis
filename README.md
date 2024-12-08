@@ -33,8 +33,8 @@ In simple, this project combines sentiment analysis, clustering, and engagement 
 ### 4. **Querying with LLM**
 - Enables users to query specific insights via a Large Language Model (LLM).
 - Example queries include:
-  - “What are the most common sentiments in the comments?”
-  - “Which comments received the most engagement?”
+  - “What are my audience’s primary concerns or feedback?”
+  - “How can I improve my Content for next video according to subscribers?”
   - “Are there specific suggestions or concerns mentioned by users?”
 
 ### 5. **Toxic Comment Identification**
