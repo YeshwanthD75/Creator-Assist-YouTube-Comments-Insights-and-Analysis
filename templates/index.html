@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Comment Sentiment Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Global styles */
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f1f3f4;
+            background-image: url('/logo.png');  /* Ensure the path aligns with Flask's static folder structure */
+            background-size:cover;
+            background-position: center center;
+            background-attachment:fixed;
+    
+        }
+
+        h1 {
+            text-align: center;
+            padding: 20px;
+            background-color: #4CAF50;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        /* Form and input styles */
+        form {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"], input[type="number"], button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Response sections styles */
+        .response-container {
+            margin-top: 40px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h3, h4 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+
+        p {
+            text-align: justify;
+            line-height: 1.6;
+        }
+
+        .formatted-response {
+            white-space: pre-wrap; /* Preserve whitespace formatting */
+            word-wrap: break-word;
+        }
+
+        /* Chatbox styles */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .chat-message {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #DCF8C6;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+
+        .response-message {
+            align-self: flex-start;
+            background-color: #ffffff;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+
+        /* Scrollable area for the chatbox */
+        .chat-box {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Sentiment Summary Styles */
+        .sentiment-summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .sentiment-summary div {
+            background-color: #f7f7f7;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+
+        /* Thumbnail and engagement styles */
+        #videoInfo {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #videoTitle {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        #video_url {
+            width: 97%;
+        }
+
+        #max_comments {
+            width: 97%;
+        }
+
+        #similarity_threshold {
+            width: 97%;
+        }
+        
+        #user_message  {
+            width: 97%;
+        }
+
+        #videoThumbnail {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .engagement-info {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #555;
+            text-align-last: center;
+        }
+
+        .engagement-info p {
+            margin: 5px 0;
+        }
+
+        .engagement-info .positive {
+            color: #4CAF50;
+        }
+
+        .engagement-info .neutral {
+            color: #FF9800;
+        }
+        
+        
+
+    </style>
+</head>
+<body>
+
+<h1 align="center">YouTube Comment Sentiment Analyzer</h1>
+
+<form id="videoForm">
+    <label for="video_url">Enter YouTube Video URL:</label><br>
+    <input type="text" id="video_url" name="video_url" required><br><br>
+    <label for="max_comments">Max Comments:</label><br>
+    <input type="number" id="max_comments" name="max_comments" min="1" max="1000" value="1000"><br><br>
+    <label for="similarity_threshold">Similarity Threshold:</label><br>
+    <input type="number" id="similarity_threshold" name="similarity_threshold" min="0" max="1" step="0.01" value="0.85"><br><br>
+    <button type="submit">Fetch Comments</button>
+</form>
+
+
+<!-- Video Info -->
+<div id="videoInfo" style="display: none;">
+    <div id="videoTitle" ></div>
+    <img id="videoThumbnail" src="" alt="Video Thumbnail">
+    <div class="engagement-info">
+        <p id="likesAndViews" ></p>
+        <p id="engagement" ></p>
+    </div>
+</div>
+
+
+<div id="sentimentSummary" class="response-container" style="display: none;">
+    <h3>Sentiment Summary:</h3>
+    <div class="sentiment-summary">
+        <div id="positiveCount"></div>
+        <div id="negativeCount"></div>
+        <div id="neutralCount"></div>
+        <div id="averageSentiment"></div>
+    </div>
+</div>
+
+<div id="insights" class="response-container" style="display: none;">
+    <h3>Insights:</h3>
+    <div id="insightText" class="formatted-response"></div>
+</div>
+
+<!-- Chatbox Section -->
+<div id="response" class="response-container" style="display: none;">
+    <h3>User Response:</h3>
+    <div class="chat-box" id="chatBox"></div>
+</div>
+
+<h2 align="center">Ask a Question:</h2>
+<form id="questionForm">
+    <label for="user_message">Your Question:</label><br>
+    <input type="text" id="user_message" name="user_message" required><br><br>
+    <button type="submit">Send Question</button>
+</form>
+<script>
+    $(document).ready(function() {
+        // Handle the form submission to fetch comments
+        $('#videoForm').submit(function(e) {
+            e.preventDefault();
+            const videoUrl = $('#video_url').val();
+            const maxComments = $('#max_comments').val();
+            const similarityThreshold = $('#similarity_threshold').val();
+
+            // Extract Video ID from URL (This needs to be inside the form submission logic)
+            const videoId = new URL(videoUrl).searchParams.get('v');
+
+            if (!videoId) {
+                alert("Invalid YouTube URL");
+                return;
+            }
+
+            const apiKey = 'AIzaSyBfH58JhwGFCJWtfwII5FxaxjIh1bUIMJI'; // Replace with your YouTube API Key
+            const apiUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,statistics`;
+
+            // Fetch Video Info
+            $.get(apiUrl, function(data) {
+                const video = data.items[0];
+                const title = video.snippet.title;
+                const thumbnail = video.snippet.thumbnails.high.url;
+                const likes = parseInt(video.statistics.likeCount);
+                const views = parseInt(video.statistics.viewCount);
+
+                const likesReachRatio = (likes / views) * 100;
+                const engagement = likesReachRatio >= 1.5 ? "Positive Engagement" : "Neutral Engagement";
+
+                // Display Video Information
+                $('#videoTitle').text(title);
+                $('#videoThumbnail').attr('src', thumbnail);
+                $('#likesAndViews').text(`Likes: ${likes} | Views: ${views}`);
+                $('#engagement').text(`Likes Reach Ratio: ${likesReachRatio.toFixed(2)}% - ${engagement}`);
+                $('#videoInfo').show();
+            });
+
+            // Continue fetching comments after fetching video info
+            $.ajax({
+                url: '/fetch_comments',
+                method: 'POST',
+                data: {
+                    video_url: videoUrl,
+                    max_comments: maxComments,
+                    similarity_threshold: similarityThreshold
+                },
+                success: function(response) {
+                    $('#sentimentSummary').show();
+                    $('#positiveCount').html("<strong>Positive Comments:</strong> " + response.sentiment_summary.positive);
+                    $('#negativeCount').html("<strong>Negative Comments:</strong> " + response.sentiment_summary.negative);
+                    $('#neutralCount').html("<strong>Neutral Comments:</strong> " + response.sentiment_summary.neutral);
+                    $('#averageSentiment').html("<strong>Average Sentiment:</strong> " + response.sentiment_summary.average_sentiment.toFixed(2));
+
+                    $('#insights').show();
+                    $('#insightText').html(response.insight);
+
+                    $('#response').hide();
+                }
+            });
+        });
+
+        // Handle the form submission to send a question
+        $('#questionForm').submit(function(e) {
+            e.preventDefault();
+            const userMessage = $('#user_message').val();
+
+            $.ajax({
+                url: '/send_message',
+                method: 'POST',
+                data: { user_message: userMessage },
+                success: function(response) {
+                    $('#response').show();
+                    $('#chatBox').html(`
+                        <div class="chat-message">
+                            <div class="user-message">${userMessage}</div>
+                            <div class="response-message">${response.response}</div>
+                        </div>
+                    `);
+                }
+            });
+        });
+    });
+</script>
+
+
+</body>
+</html>
